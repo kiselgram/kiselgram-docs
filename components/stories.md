@@ -1,3 +1,9 @@
+---
+layout: page
+title: Stories
+permalink: /components/stories/
+---
+
 # Stories
 
 Ephemeral media posts (photos/videos) showing a ring on your own profile for 24 hours,

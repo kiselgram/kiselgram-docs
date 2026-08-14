@@ -1,6 +1,12 @@
+---
+layout: page
+title: Getting Started
+permalink: /getting-started/
+---
+
 # Getting Started
 
-This guide covers installing Kiselgram locally, configuring it, and running the development server. Production deployment is covered in [Deployment](deployment.md).
+This guide covers installing Kiselgram locally, configuring it, and running the development server. Production deployment is covered in [Deployment](/deployment/).
 
 ## Prerequisites
 
@@ -208,7 +214,7 @@ If `DATABASE_URL` is set, the app switches to production mode automatically (deb
 .venv/bin/python -m pytest tests/ -v
 ```
 
-See [Testing](testing.md) for details.
+See [Testing](/testing/) for details.
 
 **Use the in-memory test DB**
 
@@ -240,4 +246,4 @@ You are using a system Python, not the venv. Activate it first: `source .venv/bi
 `⚠️ DEBUG mode is ON — do not expose this server to the internet`. Set `debug = false` in `config/kis.toml` or run with `DATABASE_URL` set.
 
 **Database errors / missing columns**
-In dev, the schema is created with `db.create_all()`. For schema changes on existing DBs, prefer Alembic migrations (`flask db migrate`). See [Deployment](deployment.md) and [Architecture](architecture.md).
+In dev, the schema is created with `db.create_all()`. For schema changes on existing DBs, prefer Alembic migrations (`flask db migrate`). See [Deployment](/deployment/) and [Architecture](/architecture/).

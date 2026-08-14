@@ -1,3 +1,9 @@
+---
+layout: page
+title: Admin Panel
+permalink: /components/admin-panel/
+---
+
 # Admin Panel
 
 Platform moderation: manage users, review reports, and broadcast to the whole platform.

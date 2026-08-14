@@ -1,3 +1,9 @@
+---
+layout: page
+title: Testing
+permalink: /testing/
+---
+
 # Testing
 
 The project ships a `pytest` suite under `tests/` covering the V1 and V2 APIs, auth flows, models, security helpers, the bot platform, and the video integration.
@@ -115,4 +121,4 @@ Optional coverage report:
 .venv/bin/python -m pytest tests/ -q --cov=app --cov-report=term-missing
 ```
 
-See [Getting Started](getting-started.md) for env setup and [Deployment](deployment.md) for running the same suite in a container.
+See [Getting Started](/getting-started/) for env setup and [Deployment](/deployment/) for running the same suite in a container.

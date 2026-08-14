@@ -1,0 +1,15 @@
+title: Kiselgram Documentation
+description: System architectural layouts, API scopes, and operational guides.
+
+url: "https://docs.kiselgram.ru"
+baseurl: ""
+
+repo: "https://github.com/kiselgram/kiselgram-docs"
+github_branch: "main"
+
+# Load the Jekyll variant of the Docsy theme
+remote_theme: vsoch/docsy-jekyll
+
+# Global layout settings
+sass:
+  style: :compressed

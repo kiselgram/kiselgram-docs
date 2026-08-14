@@ -1,3 +1,9 @@
+---
+layout: page
+title: Personal Chat & Messages
+permalink: /components/chat/
+---
+
 # Personal Chat & Messages
 
 Direct messaging: send/delete/edit messages, read receipts, typing indicator, emoji reactions,
@@ -40,6 +46,6 @@ Messages:
 - Messages support optional end-to-end style encryption fields (`is_encrypted`,
   `encrypted_content`, `encryption_key_id`) but by default send plaintext.
 - Attachments are saved to file paths on `file_path`; an uploaded file must exist before a
-  message references it (see [Files & Uploads](files-uploads.md)).
+  message references it (see [Files & Uploads](/components/files-uploads/)).
 - `telegram_message_id` / `is_from_telegram` allow bridging from the Telegram import mode.
 - Empty messages are rejected by the API validator.

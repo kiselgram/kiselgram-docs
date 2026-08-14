@@ -1,3 +1,9 @@
+---
+layout: page
+title: Architecture
+permalink: /architecture/
+---
+
 # Architecture
 
 This document describes the internal structure of Kiselgram: the application layout, the data model, the two API generations, and how the frontend is organized.
@@ -160,7 +166,7 @@ JSON API, Bearer-token auth, mounted under `/api.v2/api/...`. Mounted once under
 
 ### Admin (`spav2_admin_bp`)
 
-Served under its own prefix (see [API Reference](api-reference.md) and [Security](security.md)). Admin-only endpoints for users, chats, messages, reports, 2FA, mail, terminal, promos.
+Served under its own prefix (see [API Reference](/api-reference/) and [Security](/security/)). Admin-only endpoints for users, chats, messages, reports, 2FA, mail, terminal, promos.
 
 ## Frontend architecture
 

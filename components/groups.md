@@ -1,3 +1,9 @@
+---
+layout: page
+title: Groups
+permalink: /components/groups/
+---
+
 # Groups
 
 Group chats: create, invite by link, manage members and roles.

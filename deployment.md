@@ -1,3 +1,9 @@
+---
+layout: page
+title: Deployment
+permalink: /deployment/
+---
+
 # Deployment
 
 Production deployment is containerized: PostgreSQL, a Gunicorn-backed app, a WebRTC video service, a mail stack, and an Nginx reverse proxy with TLS.

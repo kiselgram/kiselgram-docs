@@ -1,3 +1,9 @@
+---
+layout: page
+title: Overview
+permalink: /overview/
+---
+
 # Overview
 
 Kiselgram is a complete, self-hostable messaging platform. It is not a mockup: the production build is a live Flask backend with a JavaScript SPA, deployed on real infrastructure, with a WebRTC video service, a mail server, and an admin panel.

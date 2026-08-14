@@ -1,0 +1,50 @@
+- title: Getting Started
+  url: getting-started
+- title: Overview
+  url: overview
+- title: Core Architecture
+  url: architecture
+- title: API Reference
+  url: api-reference
+  links:
+    - title: JSON Serialization
+      url: components/json-serialization
+- title: Security
+  url: security
+- title: Deployment
+  url: deployment
+- title: Testing
+  url: testing
+- title: Domain Layout
+  url: domain
+- title: Components
+  url: components
+  links:
+    - title: Component Map
+      url: components
+    - title: Auth & Sessions
+      url: components/auth-sessions
+    - title: Chat Engine
+      url: components/chat
+    - title: Groups
+      url: components/groups
+    - title: Channels
+      url: components/channels
+    - title: Stories
+      url: components/stories
+    - title: Calls & Video (WebRTC)
+      url: components/calls-video
+    - title: Premium
+      url: components/premium
+    - title: Bots
+      url: components/bots
+    - title: Admin Panel
+      url: components/admin-panel
+    - title: Features & Extras
+      url: components/features-extras
+    - title: Contacts & Profile
+      url: components/contacts-profile
+    - title: Files & Uploads
+      url: components/files-uploads
+- title: LLMs
+  url: llms.txt

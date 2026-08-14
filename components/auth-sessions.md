@@ -1,3 +1,9 @@
+---
+layout: page
+title: Authentication & Sessions
+permalink: /components/auth-sessions/
+---
+
 # Authentication & Sessions
 
 How users register, log in, stay authenticated, get push tokens and manage active sessions.

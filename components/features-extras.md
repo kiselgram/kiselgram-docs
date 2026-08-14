@@ -1,3 +1,9 @@
+---
+layout: page
+title: Features & Extras
+permalink: /components/features-extras/
+---
+
 # Features & Extras
 
 Polls, pinning, forwarding, saved messages, music, search, referrals, settings and profile —

@@ -1,3 +1,9 @@
+---
+layout: page
+title: Calls & Video (WebRTC)
+permalink: /components/calls-video/
+---
+
 # Calls & Video (WebRTC)
 
 Voice and video calling plus multi-user WebRTC video rooms.

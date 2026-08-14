@@ -1,3 +1,9 @@
+---
+layout: page
+title: Channels
+permalink: /components/channels/
+---
+
 # Channels
 
 One-way broadcast channels: create, subscribe, publish posts.

@@ -5,7 +5,7 @@
 
 
 ---
-# README.md
+# index.md
 ---
 # Kiselgram Documentation
 
@@ -41,6 +41,7 @@ Each platform subsystem has its own page under [`components/`](components/):
 - [Features & Extras](components/features-extras.md) — polls, pins, forwards, saved, music, search, referrals, settings
 - [Contacts & Profile](components/contacts-profile.md) — contact book, blocking, reports, profile
 - [Files & Uploads](components/files-uploads.md) — uploads, downloads, chunked upload, attachments
+- [JSON Serialization](components/json-serialization.md) — exact JSON shapes the V2 API returns for every core entity
 
 ## Quick facts
 
@@ -1311,53 +1312,91 @@ Optional coverage report:
 
 See [Getting Started](getting-started.md) for env setup and [Deployment](deployment.md) for running the same suite in a container.
 ---
-# components/components/index.md
+# domain.md
 ---
-# Platform Components
+# Domain Architecture
 
-KiselGram is a modular private messenger. Every subsystem of the platform is documented
-in its own subpage under `components/`. Each page covers the data models, backend route
-modules, definitive HTTP endpoints, frontend JS modules, and hard limits.
+```
+kiselgram.ru          ─ Main site (landing page)
+web.kiselgram.ru      ─ SPA (single-page app)
+api.kiselgram.ru      ─ API backend (Flask)
+desktop.kiselgram.ru  ─ Desktop client downloads (VPS nginx → GitHub Pages TBD)
+docs.kiselgram.ru     ─ Documentation (VPS nginx → GitHub Pages TBD)
+```
 
-All versioned endpoints live under the `/api.v2` blueprint (with a stub `/api.v3`). Auth,
-bots, admin, push and files are mounted separately — details are in each page.
+## Service → Subdomain mapping
 
-## Component map
+| Subdomain           | Target               | Hosting                |
+|---------------------|----------------------|------------------------|
+| `kiselgram.ru`      | Landing page         | VPS (nginx → Flask)    |
+| `web.kiselgram.ru`  | SPA (`/k`)           | VPS (nginx → Flask)    |
+| `api.kiselgram.ru`  | API backend          | VPS (nginx → Flask)    |
+| `desktop.kiselgram.ru` | Desktop zips     | VPS nginx (static)     |
+| `docs.kiselgram.ru` | Documentation        | VPS nginx (static)     |
 
-| Component | Models | Backend | Endpoints page | Frontend JS |
-|---|---|---|---|---|
-| [Authentication & Sessions](auth-sessions.md) | `User`, `UserSession`, `GoogleAccount` | `auth.py`, `login_v3.py`, `qr_login.py`, `oauth.py`, `push.py`, `sessions.py` | `/api/auth`, `/api/auth/oauth`, `/api/auth/qr`, `/api/api/sessions` (Sessions) | `auth.js` |
-| [Personal Chat & Messages](chat.md) | `Message`, `Chat`, `EmojiReaction`, `TypingStatus` | `chat.py`, `messages.py` | `/api/api/chat`, `/api/api/messages` | `chat.js`, `ui.js` |
-| [Groups](groups.md) | `Chat` (type `group`), `GroupMember`, `InviteLink`, `GroupTopic` | `groups.py` | `/api/api/groups` | `groups.js` |
-| [Channels](channels.md) | `Chat` (type `channel`), `ChannelMember`, `ChannelBind` | `channels.py` | `/api/api/channels` | `channels.js` |
-| [Stories](stories.md) | `Story`, `StoryView`, `StoryLike`, `StoryReaction`, `StoryPrivacy`, `StoryAllowedUser` | `stories.py` | `/api/api/stories` | `stories.js` |
-| [Calls & Video (WebRTC)](calls-video.md) | `Call`, `VideoCall`, `VideoCallParticipant`, `RTCSettings` | `calls.py` | `/api/api/calls` + `/video/integration/...` | `calls.js`, `webrtc.js` |
-| [Premium](premium.md) | `UserPremium`, `PremiumPromo`, `PremiumOrder` | `premium.py` | `/premium` and `/api/api/premium` | `premium.js` |
-| [Bots](bots.md) | `BotApp`, `BotCommand`, `BotWebhook` | `bot_webhook.py` | `/api/bots` | — |
-| [Admin Panel](admin-panel.md) | `User`, `Report`, `ModLog` | `admin.py` | `/api/admin` | `admin.js` |
-| [Features & Extras](features-extras.md) | `Poll`, `PollVote`, `Pin`, `SavedMessage`, `UserMusic`, `RecentSearch`, `Referral`, `UserProfile`, `UserSettings` | `features.py`, `pins.py`, `forward.py`, `saved.py`, `music.py`, `search.py`, `referrals.py`, `ksettings.py`, `profile.py` | `/api/api/*` | `features.js`, `profile.js`, `search.js` |
-| [Contacts & Profile](contacts-profile.md) | `Contact`, `BlockedUser`, `Report` | `contacts.py`, `block.py`, `profile.py` | `/api/api/contacts` | `profile.js`, `init.js` |
-| [Files & Uploads](files-uploads.md) | `FileUpload`, `Attachment` | `files.py`, `uploads.py` | `/files/...`, `/uploads/...` | `files.js` |
+## GitHub Pages (future)
 
-## Main blueprint layout
+- `kiselgram/docs` → `docs.kiselgram.ru` (CNAME record to GitHub Pages IPs)
+- `kiselgram/desktop-site` → `desktop.kiselgram.ru`
 
-- `V2 = '/api.v2/api'` and `V3 = '/api.v3'` are global JS constants (see `static/js/k/init.js`).
-- The `/api.v2` master blueprint mounts per-feature sub-blueprints, each holding several
-  endpoints below (e.g. `/api/api/messages/send`, `/api/api/groups/create`).
-- Points outside the versioned blueprint are listed at the bottom of `../api-reference.md`:
-  `/api/push`, `/api/admin`, `/video/integration/...`, `/files/...`, `/uploads/...`,
-  `/health`, `/stats`, `/endpoints`, `/ping`, `/test/env`, `/test/env/shutdown`.
+## nginx rules
 
-## Global route helpers
+- `kiselgram.ru` — landing page at `/`, everything else 301 → `web.kiselgram.ru`
+- `web.kiselgram.ru` — proxy_pass to `app:5000`, root redirects to `/auth/login`
+- `api.kiselgram.ru` — proxy_pass to `app:5000` (API routes)
+- `desktop.kiselgram.ru` — static files from `/var/www/desktop`
+- `docs.kiselgram.ru` — static files from `/var/www/docs`
 
-- `@login_required` guards every authenticated endpoint; an expired/invalid token returns
-  `401` with a message like *"Session expired. Please log in again."*
-- `@admin_required` restricts the /admin surface.
-- `@rate_limit(name, ..., max_requests, window)` throttles sensitive actions (login, register,
-  OTP, resend).
-- All responses are JSON. Lists return `{success: true, items: [...]}` or `{data: [...]}`.
+## SSL
+
+Single cert covering all domains, renewed nightly via certbot cron. Serves from `/root/kiselgram/ssl/fullchain.pem`.
+
 ---
-# components/components/auth-sessions.md
+# components/admin-panel.md
+---
+# Admin Panel
+
+Platform moderation: manage users, review reports, and broadcast to the whole platform.
+
+## Data models (`app/models.py`)
+
+- **User** — `is_admin` flag and `is_active` control access.
+- **Report** — `id`, `reporter_id`, `reported_user_id`, `reported_message_id`, `reason`,
+  `status` (default `'pending'`), `created_at`.
+- **ModLog** — audit trail of admin actions: `id`, `admin_id`, `action`, `target_id`,
+  `details`, `created_at`.
+
+## Backend module (`app/routes/admin.py`)
+
+Mounted outside the versioned API at `url_prefix='/api/admin'`; every endpoint is guarded by
+`@admin_required`.
+
+## Endpoints
+
+Users:
+- `GET  /api/admin/users` — list/search users with pagination.
+- `POST /api/admin/users/{id}/ban` — set `is_active = False` (soft ban).
+- `POST /api/admin/users/{id}/unban` — restore access.
+- `POST /api/admin/users/{id}/role` — grant/revoke `is_admin`.
+
+Reports:
+- `GET  /api/admin/reports` — list reports, filter by `status`.
+- `POST /api/admin/reports/{id}/resolve` — mark resolved / dismiss.
+- `POST /api/admin/reports/{id}/action` — act on the reported user/message.
+
+Platform:
+- `POST /api/admin/broadcast` — send a platform-wide message.
+- `POST /api/admin/stats` refresh → see `GET /stats` (public) in extras (global endpoints).
+
+## Frontend module (`static/js/k/`)
+- `admin.js` — moderation dashboard: user search, ban/unban, report queue, broadcast box.
+
+## Notes
+- Reports always carry a `reason`; `status` values: `pending`, `resolved`, `dismissed`.
+- Every action writes a `ModLog` row for auditability.
+- The `/api/admin` surface is fully separate from `/api.v2`; there is no `/api.v2/api/admin`.
+---
+# components/auth-sessions.md
 ---
 # Authentication & Sessions
 
@@ -1409,167 +1448,41 @@ How users register, log in, stay authenticated, get push tokens and manage activ
   `is_active = False`, which fails `@login_required` with a `401`.
 - Login/register are throttled by the global rate limiter (see global helpers in `index.md`).
 ---
-# components/components/chat.md
+# components/bots.md
 ---
-# Personal Chat & Messages
+# Bots
 
-Direct messaging: send/delete/edit messages, read receipts, typing indicator, emoji reactions,
-scheduling and attachments. This is the core of the "personal" `Chat` (`chat_type='personal'`).
+Bot platform: create and run bot "apps" against the live API on behalf of their owners,
+plus the webhook surface bots receive updates on.
 
 ## Data models (`app/models.py`)
 
-- **Chat** — `id`, `chat_type` ('personal' | 'group' | 'channel'), `peer1_id`, `peer2_id`
-  (the two participants for a personal chat), `created_at`, `last_message_at`.
-- **Message** — `id`, `content`, `sender_id`, `receiver_id`, `chat_id`, `timestamp`, `is_read`,
-  `read_at`, `delivered_at`, `has_attachment`, `file_type`, `file_name`, `file_path`,
-  `file_size`, `thumbnail_path`, `is_encrypted`, `encrypted_content`, `encryption_key_id`,
-  `emoji`, `is_deleted`, `deleted_for_all`, `scheduled_at`, `edited_at`, `is_saved`,
-  `is_from_telegram`, `telegram_message_id`.
-- **EmojiReaction** — `id`, `message_id`, `user_id`, `emoji`, `created_at`.
-- **TypingStatus** — `id`, `chat_id`, `user_id`, `is_typing`, `last_update`.
+- **BotApp** — `id`, `owner_id`, `name`, `username`, `token`, `description`,
+  `allowed_commands`, `is_active`, `created_at`.
+- **BotCommand** — `id`, `bot_id`, `command`, `description`, `handler`.
+- **BotWebhook** — `id`, `bot_id`, `url`, `secret`, `verified_at`, `is_active`.
 
-## Endpoints (`app/routes/spav2/chat.py`, `messages.py`)
+## Backend module (`app/routes/bot_webhook.py`)
 
-All prefixed `V2 + '/api'`, i.e. `/api.v2/api/...`:
+Registered in `create_app()` with `url_prefix='/api/bots'`.
 
-- `POST /api/api/chat/create` — create or resolve a personal `Chat`.
-- `GET  /api/api/chat/history` — paginated message history for a chat (`chat_id`, `page`).
-- `POST /api/api/chat/typing` — report typing state.
+## Endpoints
 
-Messages:
-- `POST /api/api/messages/send` — send a text message to `chat_id` / `receiver_id`.
-- `DELETE /api/api/messages/{id}` — soft delete (`is_deleted = True`) or `deleted_for_all`.
-- `POST /api/api/messages/{id}/edit` — edit text; sets `edited_at`.
-- `POST /api/api/messages/{id}/read` — mark read; sets `is_read` / `read_at`.
-- `POST /api/api/messages/{id}/reaction` — add an emoji reaction.
-- `POST /api/api/messages/{id}/scheduled` — schedule a message via `scheduled_at`.
-- `POST /api/api/messages/forward` — forward a message (see Features).
-
-## Frontend modules (`static/js/k/`)
-- `chat.js` — render bubbles, send / edit / delete, read receipts, typing bubble.
-- `ui.js` — shared web UI helpers used by the chat screens.
-
-## Notes & limits
-- Messages support optional end-to-end style encryption fields (`is_encrypted`,
-  `encrypted_content`, `encryption_key_id`) but by default send plaintext.
-- Attachments are saved to file paths on `file_path`; an uploaded file must exist before a
-  message references it (see [Files & Uploads](files-uploads.md)).
-- `telegram_message_id` / `is_from_telegram` allow bridging from the Telegram import mode.
-- Empty messages are rejected by the API validator.
----
-# components/components/groups.md
----
-# Groups
-
-Group chats: create, invite by link, manage members and roles.
-
-## Data models (`app/models.py`)
-
-- **Chat** — for groups `chat_type='group'`, holding `id`, `title`, `description`, `avatar`,
-  `created_by`, `created_at`, `members_count`.
-- **GroupMember** — `id`, `chat_id`, `user_id`, `role`
-  ('owner' | 'admin' | 'member' | 'participant'), `joined_at`.
-- **InviteLink** — `id`, `group_id`, `code` (unique), `link`, `created_by`, `uses`, `created_at`.
-- **GroupTopic** (forum mode, optional) — `id`, `chat_id`, `title`, `icon_emoji_id`, `created_at`.
-
-## Endpoints (`app/routes/spav2/groups.py`)
-
-All under `V2 + '/api'` → `/api.v2/api/groups/...`:
-
-- `POST /api/api/groups/create` — create a group (`title`, `description`, optional `avatar`).
-- `GET  /api/api/groups/info` — group metadata + member count.
-- `GET  /api/api/groups/members` — list members (`chat_id`).
-- `POST /api/api/groups/add-member` — add a user by `user_id`.
-- `POST /api/api/groups/remove-member` — remove a member.
-- `POST /api/api/groups/promote` / `POST /api/api/groups/demote` — set admin role.
-- `POST /api/api/groups/transfer` — transfer owner role.
-- `POST /api/api/groups/set-title` / `POST /api/api/groups/set-avatar` — update metadata.
-- `POST /api/api/groups/leave` — leave the group.
-- Invites: `POST /api/api/groups/invite-link/create`, `POST /api/api/groups/invite-link/join`.
-
-## Frontend module (`static/js/k/`)
-- `groups.js` — group list, creation form, member management UI.
+- `POST /api/bots/register` — register a new bot app; returns its `token`.
+- `POST /api/bots/{id}/command` — define or update a slash command.
+- `POST /api/bots/{id}/webhook` — set a webhook `url` + `secret`.
+- `POST /api/bots/{id}/webhook/send` — (owner) dispatch data to the bot's webhook.
+- `GET  /api/bots/me` — info for the authenticated bot owner's apps.
+- Incoming updates hit `POST /api/bots/webhook` (the shared receive endpoint) with the
+  bot `token` to authorize.
 
 ## Notes
-- `InviteLink.code` is unique; `uses` increments each join.
-- `GroupMember.role` defaults to `'member'`; the creator is `'owner'`.
-- An invite link resolves via `code` before adding the current user as a member.
+- Authenticated with the bot owner's user token plus `BotApp.token` for webhook calls.
+- `allowed_commands` and `BotCommand` entries drive command parsing; unknown commands are
+  ignored.
+- Webhook delivery is signed with `secret` and only to `is_active` webhooks.
 ---
-# components/components/channels.md
----
-# Channels
-
-One-way broadcast channels: create, subscribe, publish posts.
-
-## Data models (`app/models.py`)
-
-- **Chat** — for channels `chat_type='channel'`, with `id`, `title`, `description`, `avatar`,
-  `created_by`, `is_verified`, `created_at`, `subscribers_count`.
-- **ChannelMember** — `id`, `channel_id`, `user_id`, `role`
-  ('owner' | 'admin' | 'subscriber'), `joined_at`.
-- **ChannelBind** — `id`, `channel_id`, `group_id`, `created_at` (links a discussion group).
-- Posts reuse the **Message** model with `chat_id` pointing at the channel.
-
-## Endpoints (`app/routes/spav2/channels.py`)
-
-All under `V2 + '/api'` → `/api.v2/api/channels/...`:
-
-- `POST /api/api/channels/create` — create a channel (`title`, `description`, `avatar`).
-- `GET  /api/api/channels/info` — channel metadata + subscriber count.
-- `GET  /api/api/channels/subscribers` — list subscribers.
-- `POST /api/api/channels/subscribe` / `POST /api/api/channels/unsubscribe` — toggle membership.
-- `POST /api/api/channels/set-title` / `POST /api/api/channels/set-avatar` — update metadata.
-- `POST /api/api/channels/verify` — mark channel verified (admin only).
-- Publishing posts goes through `messages/send` with the channel `chat_id`.
-
-## Frontend module (`static/js/k/`)
-- `channels.js` — channel browsing, subscribe buttons, post composition.
-
-## Notes
-- `ChannelMember.role` distinguishes `owner`/`admin` from plain `subscriber`.
-- Only `owner`/`admin` can publish; `messages/send` checks the sender's role in the channel.
-- Verification is restricted to `@admin_required`.
----
-# components/components/stories.md
----
-# Stories
-
-Ephemeral media posts (photos/videos) showing a ring on your own profile for 24 hours,
-with viewers, likes, reactions and privacy targeting.
-
-## Data models (`app/models.py`)
-
-- **Story** — `id`, `user_id`, `media_path`, `media_type` (default `'image'`), `caption`,
-  `music_path`, `privacy_type` (default `'everyone'`), `created_at`.
-- **StoryView** — `story_id`, `viewer_id`, `viewed_at` (who has seen it).
-- **StoryLike** — `story_id`, `user_id`, `created_at`.
-- **StoryReaction** — `story_id`, `user_id`, `reaction`, `created_at`.
-- **StoryPrivacy** — `story_id`, `privacy_type` (override).
-- **StoryAllowedUser** — `story_id`, `user_id` (explicit allow-list).
-
-## Endpoints (`app/routes/spav2/stories.py`)
-
-All under `V2 + '/api'` → `/api.v2/api/stories/...`:
-
-- `POST /api/api/stories/create` — create a story (`media_path`, `caption`, `privacy_type`).
-- `GET  /api/api/stories/feed` — your stories + friends' active stories.
-- `GET  /api/api/stories/{id}` — fetch one story.
-- `DELETE /api/api/stories/{id}` — delete your story.
-- `POST /api/api/stories/{id}/view` — register a view (creates `StoryView`).
-- `POST /api/api/stories/{id}/like` / `/unlike` — toggle like.
-- `POST /api/api/stories/{id}/reaction` — add an emoji reaction.
-- `POST /api/api/stories/{id}/views` — list viewers of your story.
-
-## Frontend module (`static/js/k/`)
-- `stories.js` — story ring on profile, full-screen viewer, like & reaction bar.
-
-## Notes & limits
-- Story media must already exist in `/uploads/...` before `create`.
-- Privacy is resolved as: explicit `StoryAllowedUser` > `privacy_type` ('everyone' handled
-  directly, others via `StoryPrivacy`).
-- A viewer who is not allowed is blocked from `view`.
----
-# components/components/calls-video.md
+# components/calls-video.md
 ---
 # Calls & Video (WebRTC)
 
@@ -1623,130 +1536,143 @@ External video integration:
 - Only the `Call` endpoints live in the versioned API; room state is mirrored on the video
   server. WebRTC signaling depends on the external host set in the Flask config.
 ---
-# components/components/premium.md
+# components/channels.md
 ---
-# Premium
+# Channels
 
-Subscription tiers, prices, promo codes and premium perk enforcement.
+One-way broadcast channels: create, subscribe, publish posts.
 
 ## Data models (`app/models.py`)
 
-- **UserPremium** — `user_id` (PK), `is_premium`, `premium_since`, `premium_expires_at`,
-  `premium_auto_renew`, `premium_payment_method`, `premium_plan`.
-- **PremiumPromo** — `id`, `code` (unique), `discount_percent`, `max_uses`, `used_count`,
-  `expires_at`, `is_active`.
-- **PremiumOrder** — `id`, `user_id`, `plan`, `amount`, `currency`, `status`, `created_at`.
+- **Chat** — for channels `chat_type='channel'`, with `id`, `title`, `description`, `avatar`,
+  `created_by`, `is_verified`, `created_at`, `subscribers_count`.
+- **ChannelMember** — `id`, `channel_id`, `user_id`, `role`
+  ('owner' | 'admin' | 'subscriber'), `joined_at`.
+- **ChannelBind** — `id`, `channel_id`, `group_id`, `created_at` (links a discussion group).
+- Posts reuse the **Message** model with `chat_id` pointing at the channel.
 
-## Backend modules
+## Endpoints (`app/routes/spav2/channels.py`)
 
-- `app/routes/premium.py` — `premium_bp` with `url_prefix='/premium'`.
-- Feature gating lives alongside each feature (e.g. `features.py` checks `user.is_premium`).
-- Storage: prices, plans and promo codes are held in `app/routes/premium.toml` /
-  `premium.json`. Config path constant: `PREMIUM_CONFIG_PATH = __file__ / 'premium.toml'`.
+All under `V2 + '/api'` → `/api.v2/api/channels/...`:
 
-## Endpoints
-
-Standalone mount `/premium`:
-- `GET  /premium/plans` — list plans and RUB prices from the config file.
-- `POST /premium/activate` — activate/switch a premium plan (`plan`, optional payment method).
-- `POST /premium/redeem` — redeem a promo `code`.
-- `GET  /premium/status` — current premium status (`is_premium`, `premium_expires_at`).
-- `POST /premium/cancel` — disable auto-renew.
-
-Via versioned API (`V2 + '/api'` → `/api.v2/api/premium/...`):
-- `GET  /api/api/premium/status`
-- `POST /api/api/premium/activate`
-
-Registered explicitly in `create_app()` alongside the bots blueprint.
+- `POST /api/api/channels/create` — create a channel (`title`, `description`, `avatar`).
+- `GET  /api/api/channels/info` — channel metadata + subscriber count.
+- `GET  /api/api/channels/subscribers` — list subscribers.
+- `POST /api/api/channels/subscribe` / `POST /api/api/channels/unsubscribe` — toggle membership.
+- `POST /api/api/channels/set-title` / `POST /api/api/channels/set-avatar` — update metadata.
+- `POST /api/api/channels/verify` — mark channel verified (admin only).
+- Publishing posts goes through `messages/send` with the channel `chat_id`.
 
 ## Frontend module (`static/js/k/`)
-- `premium.js` — plan picker, prices in RUB, activation and promo-code entry.
+- `channels.js` — channel browsing, subscribe buttons, post composition.
 
 ## Notes
-- Prices are configured in RUB (`premium.toml` / `premium.json`), not hard-coded.
-- `UserPremium.is_premium` gates exclusive stickers, larger upload limits, story viewer
-  history, etc. (see each feature page).
-- Promo codes validate against `PremiumPromo.max_uses` and `expires_at`.
+- `ChannelMember.role` distinguishes `owner`/`admin` from plain `subscriber`.
+- Only `owner`/`admin` can publish; `messages/send` checks the sender's role in the channel.
+- Verification is restricted to `@admin_required`.
 ---
-# components/components/bots.md
+# components/chat.md
 ---
-# Bots
+# Personal Chat & Messages
 
-Bot platform: create and run bot "apps" against the live API on behalf of their owners,
-plus the webhook surface bots receive updates on.
+Direct messaging: send/delete/edit messages, read receipts, typing indicator, emoji reactions,
+scheduling and attachments. This is the core of the "personal" `Chat` (`chat_type='personal'`).
 
 ## Data models (`app/models.py`)
 
-- **BotApp** — `id`, `owner_id`, `name`, `username`, `token`, `description`,
-  `allowed_commands`, `is_active`, `created_at`.
-- **BotCommand** — `id`, `bot_id`, `command`, `description`, `handler`.
-- **BotWebhook** — `id`, `bot_id`, `url`, `secret`, `verified_at`, `is_active`.
+- **Chat** — `id`, `chat_type` ('personal' | 'group' | 'channel'), `peer1_id`, `peer2_id`
+  (the two participants for a personal chat), `created_at`, `last_message_at`.
+- **Message** — `id`, `content`, `sender_id`, `receiver_id`, `chat_id`, `timestamp`, `is_read`,
+  `read_at`, `delivered_at`, `has_attachment`, `file_type`, `file_name`, `file_path`,
+  `file_size`, `thumbnail_path`, `is_encrypted`, `encrypted_content`, `encryption_key_id`,
+  `emoji`, `is_deleted`, `deleted_for_all`, `scheduled_at`, `edited_at`, `is_saved`,
+  `is_from_telegram`, `telegram_message_id`.
+- **EmojiReaction** — `id`, `message_id`, `user_id`, `emoji`, `created_at`.
+- **TypingStatus** — `id`, `chat_id`, `user_id`, `is_typing`, `last_update`.
 
-## Backend module (`app/routes/bot_webhook.py`)
+## Endpoints (`app/routes/spav2/chat.py`, `messages.py`)
 
-Registered in `create_app()` with `url_prefix='/api/bots'`.
+All prefixed `V2 + '/api'`, i.e. `/api.v2/api/...`:
 
-## Endpoints
+- `POST /api/api/chat/create` — create or resolve a personal `Chat`.
+- `GET  /api/api/chat/history` — paginated message history for a chat (`chat_id`, `page`).
+- `POST /api/api/chat/typing` — report typing state.
 
-- `POST /api/bots/register` — register a new bot app; returns its `token`.
-- `POST /api/bots/{id}/command` — define or update a slash command.
-- `POST /api/bots/{id}/webhook` — set a webhook `url` + `secret`.
-- `POST /api/bots/{id}/webhook/send` — (owner) dispatch data to the bot's webhook.
-- `GET  /api/bots/me` — info for the authenticated bot owner's apps.
-- Incoming updates hit `POST /api/bots/webhook` (the shared receive endpoint) with the
-  bot `token` to authorize.
+Messages:
+- `POST /api/api/messages/send` — send a text message to `chat_id` / `receiver_id`.
+- `DELETE /api/api/messages/{id}` — soft delete (`is_deleted = True`) or `deleted_for_all`.
+- `POST /api/api/messages/{id}/edit` — edit text; sets `edited_at`.
+- `POST /api/api/messages/{id}/read` — mark read; sets `is_read` / `read_at`.
+- `POST /api/api/messages/{id}/reaction` — add an emoji reaction.
+- `POST /api/api/messages/{id}/scheduled` — schedule a message via `scheduled_at`.
+- `POST /api/api/messages/forward` — forward a message (see Features).
 
-## Notes
-- Authenticated with the bot owner's user token plus `BotApp.token` for webhook calls.
-- `allowed_commands` and `BotCommand` entries drive command parsing; unknown commands are
-  ignored.
-- Webhook delivery is signed with `secret` and only to `is_active` webhooks.
+## Frontend modules (`static/js/k/`)
+- `chat.js` — render bubbles, send / edit / delete, read receipts, typing bubble.
+- `ui.js` — shared web UI helpers used by the chat screens.
+
+## Notes & limits
+- Messages support optional end-to-end style encryption fields (`is_encrypted`,
+  `encrypted_content`, `encryption_key_id`) but by default send plaintext.
+- Attachments are saved to file paths on `file_path`; an uploaded file must exist before a
+  message references it (see [Files & Uploads](files-uploads.md)).
+- `telegram_message_id` / `is_from_telegram` allow bridging from the Telegram import mode.
+- Empty messages are rejected by the API validator.
 ---
-# components/components/admin-panel.md
+# components/contacts-profile.md
 ---
-# Admin Panel
+# Contacts & Profile
 
-Platform moderation: manage users, review reports, and broadcast to the whole platform.
+Contact book, blocking, reporting and profile management.
 
 ## Data models (`app/models.py`)
 
-- **User** — `is_admin` flag and `is_active` control access.
+- **Contact** — `id`, `owner_id`, `contact_user_id`, `display_name`, `is_blocked`,
+  `created_at`.
+- **BlockedUser** — `user_id`, `blocked_user_id`, `reason`, `created_at`.
 - **Report** — `id`, `reporter_id`, `reported_user_id`, `reported_message_id`, `reason`,
-  `status` (default `'pending'`), `created_at`.
-- **ModLog** — audit trail of admin actions: `id`, `admin_id`, `action`, `target_id`,
-  `details`, `created_at`.
+  `status`, `created_at`.
+- **User** — profile surface: `username`, `display_name`, `avatar`, `bio`, `status`,
+  `phone`, `birthday`, `last_seen`.
+- **UserProfile** — extended profile: `id`, `user_id`, `bio`, `avatar`, `phone`, `link`.
 
-## Backend module (`app/routes/admin.py`)
+## Backend modules (`app/routes/spav2/`)
 
-Mounted outside the versioned API at `url_prefix='/api/admin'`; every endpoint is guarded by
-`@admin_required`.
+- `contacts.py` — contacts & search users.
+- `block.py` — blocking/unblocking.
+- `profile.py` — view & edit own profile.
 
-## Endpoints
+## Endpoints (`V2 + '/api'` → `/api.v2/api/...`)
 
-Users:
-- `GET  /api/admin/users` — list/search users with pagination.
-- `POST /api/admin/users/{id}/ban` — set `is_active = False` (soft ban).
-- `POST /api/admin/users/{id}/unban` — restore access.
-- `POST /api/admin/users/{id}/role` — grant/revoke `is_admin`.
+Contacts:
+- `GET  /api/api/contacts` — list contacts.
+- `POST /api/api/contacts/add` — add a contact (`user_id`).
+- `DELETE /api/api/contacts/remove` — remove a contact.
+- `POST /api/api/contacts/import` — import from phone number list.
+
+Blocking:
+- `POST /api/api/block` — block a `user_id`.
+- `POST /api/api/unblock` — unblock.
+- `GET  /api/api/blocked` — list blocked users.
 
 Reports:
-- `GET  /api/admin/reports` — list reports, filter by `status`.
-- `POST /api/admin/reports/{id}/resolve` — mark resolved / dismiss.
-- `POST /api/admin/reports/{id}/action` — act on the reported user/message.
+- `POST /api/api/report` — report a user/message with `reason`.
 
-Platform:
-- `POST /api/admin/broadcast` — send a platform-wide message.
-- `POST /api/admin/stats` refresh → see `GET /stats` (public) in extras (global endpoints).
+Profile:
+- `GET  /api/api/profile/{username}` — public profile.
+- `POST /api/api/profile/update` — update `bio` / `avatar` / `display_name` / `phone`.
 
-## Frontend module (`static/js/k/`)
-- `admin.js` — moderation dashboard: user search, ban/unban, report queue, broadcast box.
+## Frontend modules (`static/js/k/`)
+- `profile.js` — profile view/edit screens.
+- `init.js` — holds global constants `V2 = '/api.v2/api'`, `V3 = '/api.v3'` and shared setup.
 
 ## Notes
-- Reports always carry a `reason`; `status` values: `pending`, `resolved`, `dismissed`.
-- Every action writes a `ModLog` row for auditability.
-- The `/api/admin` surface is fully separate from `/api.v2`; there is no `/api.v2/api/admin`.
+- A blocked user cannot message you; `messages/send` checks `BlockedUser`.
+- Reports feed the admin queue (`/api/admin/reports`, see [Admin Panel](admin-panel.md)).
+- `user_id` vs `username` — most endpoints accept the numeric `user_id`; profile lookup uses
+  the `username`.
 ---
-# components/components/features-extras.md
+# components/features-extras.md
 ---
 # Features & Extras
 
@@ -1823,60 +1749,7 @@ the "everything else" that enriches the core chat experience. All endpoints belo
 - Global search `q`: **≥2 chars**; `per_page`: **≤50**.
 - Referral reward threshold: **10** invited users.
 ---
-# components/components/contacts-profile.md
----
-# Contacts & Profile
-
-Contact book, blocking, reporting and profile management.
-
-## Data models (`app/models.py`)
-
-- **Contact** — `id`, `owner_id`, `contact_user_id`, `display_name`, `is_blocked`,
-  `created_at`.
-- **BlockedUser** — `user_id`, `blocked_user_id`, `reason`, `created_at`.
-- **Report** — `id`, `reporter_id`, `reported_user_id`, `reported_message_id`, `reason`,
-  `status`, `created_at`.
-- **User** — profile surface: `username`, `display_name`, `avatar`, `bio`, `status`,
-  `phone`, `birthday`, `last_seen`.
-- **UserProfile** — extended profile: `id`, `user_id`, `bio`, `avatar`, `phone`, `link`.
-
-## Backend modules (`app/routes/spav2/`)
-
-- `contacts.py` — contacts & search users.
-- `block.py` — blocking/unblocking.
-- `profile.py` — view & edit own profile.
-
-## Endpoints (`V2 + '/api'` → `/api.v2/api/...`)
-
-Contacts:
-- `GET  /api/api/contacts` — list contacts.
-- `POST /api/api/contacts/add` — add a contact (`user_id`).
-- `DELETE /api/api/contacts/remove` — remove a contact.
-- `POST /api/api/contacts/import` — import from phone number list.
-
-Blocking:
-- `POST /api/api/block` — block a `user_id`.
-- `POST /api/api/unblock` — unblock.
-- `GET  /api/api/blocked` — list blocked users.
-
-Reports:
-- `POST /api/api/report` — report a user/message with `reason`.
-
-Profile:
-- `GET  /api/api/profile/{username}` — public profile.
-- `POST /api/api/profile/update` — update `bio` / `avatar` / `display_name` / `phone`.
-
-## Frontend modules (`static/js/k/`)
-- `profile.js` — profile view/edit screens.
-- `init.js` — holds global constants `V2 = '/api.v2/api'`, `V3 = '/api.v3'` and shared setup.
-
-## Notes
-- A blocked user cannot message you; `messages/send` checks `BlockedUser`.
-- Reports feed the admin queue (`/api/admin/reports`, see [Admin Panel](admin-panel.md)).
-- `user_id` vs `username` — most endpoints accept the numeric `user_id`; profile lookup uses
-  the `username`.
----
-# components/components/files-uploads.md
+# components/files-uploads.md
 ---
 # Files & Uploads
 
@@ -1916,3 +1789,448 @@ Media and file upload/download for chat attachments, stories, avatars and profil
 - A story/attachment must be uploaded (and its `path` returned) **before** calling
   `stories/create` or `messages/send`.
 - MIME type + `hash` are stored to detect duplicates and sanitize content types.
+---
+# components/groups.md
+---
+# Groups
+
+Group chats: create, invite by link, manage members and roles.
+
+## Data models (`app/models.py`)
+
+- **Chat** — for groups `chat_type='group'`, holding `id`, `title`, `description`, `avatar`,
+  `created_by`, `created_at`, `members_count`.
+- **GroupMember** — `id`, `chat_id`, `user_id`, `role`
+  ('owner' | 'admin' | 'member' | 'participant'), `joined_at`.
+- **InviteLink** — `id`, `group_id`, `code` (unique), `link`, `created_by`, `uses`, `created_at`.
+- **GroupTopic** (forum mode, optional) — `id`, `chat_id`, `title`, `icon_emoji_id`, `created_at`.
+
+## Endpoints (`app/routes/spav2/groups.py`)
+
+All under `V2 + '/api'` → `/api.v2/api/groups/...`:
+
+- `POST /api/api/groups/create` — create a group (`title`, `description`, optional `avatar`).
+- `GET  /api/api/groups/info` — group metadata + member count.
+- `GET  /api/api/groups/members` — list members (`chat_id`).
+- `POST /api/api/groups/add-member` — add a user by `user_id`.
+- `POST /api/api/groups/remove-member` — remove a member.
+- `POST /api/api/groups/promote` / `POST /api/api/groups/demote` — set admin role.
+- `POST /api/api/groups/transfer` — transfer owner role.
+- `POST /api/api/groups/set-title` / `POST /api/api/groups/set-avatar` — update metadata.
+- `POST /api/api/groups/leave` — leave the group.
+- Invites: `POST /api/api/groups/invite-link/create`, `POST /api/api/groups/invite-link/join`.
+
+## Frontend module (`static/js/k/`)
+- `groups.js` — group list, creation form, member management UI.
+
+## Notes
+- `InviteLink.code` is unique; `uses` increments each join.
+- `GroupMember.role` defaults to `'member'`; the creator is `'owner'`.
+- An invite link resolves via `code` before adding the current user as a member.
+---
+# components/index.md
+---
+# Platform Components
+
+KiselGram is a modular private messenger. Every subsystem of the platform is documented
+in its own subpage under `components/`. Each page covers the data models, backend route
+modules, definitive HTTP endpoints, frontend JS modules, and hard limits.
+
+All versioned endpoints live under the `/api.v2` blueprint (with a stub `/api.v3`). Auth,
+bots, admin, push and files are mounted separately — details are in each page.
+
+## Component map
+
+| Component | Models | Backend | Endpoints page | Frontend JS |
+|---|---|---|---|---|
+| [Authentication & Sessions](auth-sessions.md) | `User`, `UserSession`, `GoogleAccount` | `auth.py`, `login_v3.py`, `qr_login.py`, `oauth.py`, `push.py`, `sessions.py` | `/api/auth`, `/api/auth/oauth`, `/api/auth/qr`, `/api/api/sessions` (Sessions) | `auth.js` |
+| [Personal Chat & Messages](chat.md) | `Message`, `Chat`, `EmojiReaction`, `TypingStatus` | `chat.py`, `messages.py` | `/api/api/chat`, `/api/api/messages` | `chat.js`, `ui.js` |
+| [Groups](groups.md) | `Chat` (type `group`), `GroupMember`, `InviteLink`, `GroupTopic` | `groups.py` | `/api/api/groups` | `groups.js` |
+| [Channels](channels.md) | `Chat` (type `channel`), `ChannelMember`, `ChannelBind` | `channels.py` | `/api/api/channels` | `channels.js` |
+| [Stories](stories.md) | `Story`, `StoryView`, `StoryLike`, `StoryReaction`, `StoryPrivacy`, `StoryAllowedUser` | `stories.py` | `/api/api/stories` | `stories.js` |
+| [Calls & Video (WebRTC)](calls-video.md) | `Call`, `VideoCall`, `VideoCallParticipant`, `RTCSettings` | `calls.py` | `/api/api/calls` + `/video/integration/...` | `calls.js`, `webrtc.js` |
+| [Premium](premium.md) | `UserPremium`, `PremiumPromo`, `PremiumOrder` | `premium.py` | `/premium` and `/api/api/premium` | `premium.js` |
+| [Bots](bots.md) | `BotApp`, `BotCommand`, `BotWebhook` | `bot_webhook.py` | `/api/bots` | — |
+| [Admin Panel](admin-panel.md) | `User`, `Report`, `ModLog` | `admin.py` | `/api/admin` | `admin.js` |
+| [Features & Extras](features-extras.md) | `Poll`, `PollVote`, `Pin`, `SavedMessage`, `UserMusic`, `RecentSearch`, `Referral`, `UserProfile`, `UserSettings` | `features.py`, `pins.py`, `forward.py`, `saved.py`, `music.py`, `search.py`, `referrals.py`, `ksettings.py`, `profile.py` | `/api/api/*` | `features.js`, `profile.js`, `search.js` |
+| [Contacts & Profile](contacts-profile.md) | `Contact`, `BlockedUser`, `Report` | `contacts.py`, `block.py`, `profile.py` | `/api/api/contacts` | `profile.js`, `init.js` |
+| [Files & Uploads](files-uploads.md) | `FileUpload`, `Attachment` | `files.py`, `uploads.py` | `/files/...`, `/uploads/...` | `files.js` |
+| [JSON Serialization](json-serialization.md) | all of the above | serializer helpers in `utils/helpers.py`, `models.py`, `spav2/*` | — | — |
+
+## Main blueprint layout
+
+- `V2 = '/api.v2/api'` and `V3 = '/api.v3'` are global JS constants (see `static/js/k/init.js`).
+- The `/api.v2` master blueprint mounts per-feature sub-blueprints, each holding several
+  endpoints below (e.g. `/api/api/messages/send`, `/api/api/groups/create`).
+- Points outside the versioned blueprint are listed at the bottom of `../api-reference.md`:
+  `/api/push`, `/api/admin`, `/video/integration/...`, `/files/...`, `/uploads/...`,
+  `/health`, `/stats`, `/endpoints`, `/ping`, `/test/env`, `/test/env/shutdown`.
+
+## Global route helpers
+
+- `@login_required` guards every authenticated endpoint; an expired/invalid token returns
+  `401` with a message like *"Session expired. Please log in again."*
+- `@admin_required` restricts the /admin surface.
+- `@rate_limit(name, ..., max_requests, window)` throttles sensitive actions (login, register,
+  OTP, resend).
+- All responses are JSON. Lists return `{success: true, items: [...]}` or `{data: [...]}`.
+---
+# components/json-serialization.md
+---
+# JSON Serialization
+
+Exact JSON shapes the V2 API returns for every core entity, taken directly from the
+serializer helpers in `app/utils/helpers.py`, `app/models.py` and `app/routes/spav2/*`.
+All serializers live server-side; dates are ISO-8601 strings.
+
+## Envelope
+
+Every endpoint returns a wrapper:
+- Success: `{"success": true, "data": {...}}` or `{"success": true, "items": [...]}`.
+- Error: `{"success": false, "error": {"code": "...", "message": "..."}}`.
+
+## User / Peer
+
+Producer: `_serialize_peer(user)` (`spav2/chat.py:15`) — used in chat list and anywhere a
+peer object is embedded; `user_to_dict()` (`utils/helpers.py:208`) and `User.to_dict()`
+(`models.py:104`) are the other two variants.
+
+```json
+{
+  "user_id": 42,
+  "username": "alex",
+  "display_name": "Alex",
+  "avatar_url": "/uploads/avatars/abc.png",
+  "is_online": true,
+  "last_seen": "2026-08-14T10:00:00",
+  "status_emoji": "⭐",
+  "is_premium": false,
+  "is_bot": false,
+  "bot_webapp_url": null
+}
+```
+
+Helpers variant (`user_to_dict`) additionally exposes: `bio`, `created_at`, `has_story`,
+`followers_count`, `following_count`, `groups_count`. `User.to_dict()` (model) exposes:
+`bio`, `created_at`, `last_seen`, `is_online`, `status_emoji`, `is_premium` only.
+
+## Message
+
+Two producers:
+- `_serialize_message(msg, current_user_id)` (`spav2/messages.py:15`) — full V2 shape.
+- `message_to_dict(message, current_user_id)` (`utils/helpers.py:227`) — richer shape (reply
+  preview, forwarded_from, reactions map, attachment sizing).
+
+V2 (`_serialize_message`) shape:
+
+```json
+{
+  "message_id": 1001,
+  "sender_id": 42,
+  "receiver_id": 7,
+  "sender_username": "alex",
+  "sender_avatar_url": "/uploads/avatars/abc.png",
+  "content": "hello",
+  "reply_to_id": null,
+  "file_path": null,
+  "file_url": "/uploads/abc.txt",
+  "file_type": null,
+  "is_read": true,
+  "timestamp": "2026-08-14T10:00:00",
+  "edited_at": null,
+  "emoji": null,
+  "emoji_file": null,
+  "emoji_url": "/static/stickers/animatedemojies/x.webp",
+  "emoji_size": 96,
+  "emoji_count": 1,
+  "reactions": {"🔥": 2, "👍": 1}
+}
+```
+
+`message_to_dict` differences: uses `id` (not `message_id`), `timestamp_formatted` (HH:MM),
+`is_own` (hides sender_id semantics), `reply_to_id`/`reply_to_content` (first 50 chars)/
+`reply_to_sender`, `forwarded_from` (original sender name), and for attachments
+`formatted_size`, `preview_size` (`big`/`medium`/`none`).
+
+## Chat list item (`spav2/chat.py`)
+
+`GET /api/api/chat_list` (real path `/api.v2/api/chat_list`) mixes three chat shapes.
+Common fields: `chat_type`, `last_message`, `unread_count`.
+
+Personal chat:
+
+```json
+{
+  "chat_type": "personal",
+  "peer": {
+    "user_id": 7, "username": "maria", "display_name": "Maria",
+    "avatar_url": null, "is_online": true, "last_seen": null,
+    "status_emoji": "", "is_premium": false, "is_bot": false, "bot_webapp_url": null
+  },
+  "last_message": {
+    "message_id": 1001, "content": "hi", "sender_id": 7,
+    "timestamp": "2026-08-14T10:00:00", "is_read": false
+  },
+  "unread_count": 2
+}
+```
+
+Saved Messages (self-talk) — `peer` has `username: "saved_messages"` and `display_name:
+"Saved Messages"`, plus top-level `is_saved: true`; `unread_count: 0`. Group chat — uses
+top-level `group: {group_id, name, avatar_url}` instead of `peer`; `last_message` adds
+`sender_username`. Channels follow the same list pattern with `channel` top-level key.
+
+## Group (`_serialize_group`, `spav2/groups.py:13`)
+
+```json
+{
+  "group_id": 5,
+  "name": "Team",
+  "description": null,
+  "avatar_url": null,
+  "owner_id": 1,
+  "is_public": true,
+  "invite_link": "kiselgram.com/join/HASH",
+  "member_count": 3,
+  "my_role": "owner",
+  "last_message": {
+    "message_id": 88, "content": "standup?", "sender_username": "alex",
+    "timestamp": "2026-08-14T09:00:00"
+  },
+  "created_at": "2026-08-01T00:00:00"
+}
+```
+
+`member_count` is computed via `COUNT(ChatMember)` unless passed in; `my_role` is filled by
+the caller from the membership row (`owner`/`admin`/`member`).
+
+## Channel (`spav2/channels.py`)
+
+`GET /api/api/channels/{id}`:
+
+```json
+{
+  "channel_id": 9,
+  "name": "News",
+  "description": null,
+  "avatar_url": null,
+  "owner_id": 1,
+  "owner_username": "admin",
+  "is_public": true,
+  "invite_link": "kiselgram.com/channel/HASH",
+  "subscriber_count": 120,
+  "is_subscribed": true,
+  "admins": [{"user_id": 1, "username": "admin"}],
+  "created_at": "2026-08-01T00:00:00"
+}
+```
+
+Create response is the same without `is_subscribed`/`admins`. Channel messages reuse
+`_serialize_message` + a `reactions` count map, with `sender_username`/`sender_avatar_url`.
+
+## Story (`_story_to_dict`, `spav2/stories.py:22`)
+
+```json
+{
+  "story_id": 33,
+  "media_path": "/uploads/stories/abc.mp4",
+  "media_type": "video",
+  "caption": "holiday",
+  "created_at": "2026-08-14T10:00:00",
+  "expires_at": "2026-08-15T10:00:00",
+  "is_viewed": true,
+  "view_count": 12,
+  "like_count": 4,
+  "my_reaction": "🔥"
+}
+```
+
+`expires_at = created_at + 24h`. The V1 (`spa/stories.py`) variant returns `views` (list of
+viewer user dicts), `likes` (count), `liked` (bool), `my_reaction` (raw reaction string).
+
+## Call (`spav2/calls.py`)
+
+`GET /api/api/calls/history`:
+
+```json
+{
+  "call_id": 12,
+  "call_type": "video",
+  "peer": {"user_id": 7, "username": "maria", "avatar_url": null},
+  "direction": "outgoing",
+  "status": "answered",
+  "duration_seconds": 63,
+  "created_at": "2026-08-14T10:00:00",
+  "ended_at": "2026-08-14T10:01:03"
+}
+```
+
+`direction` is derived from `caller_id == current_user` ("outgoing" / "incoming").
+`POST /api/api/calls/make` returns a fresh call as `{call_id, caller_id, receiver_id,
+status: "ringing"}`.
+
+## Session (`spav2/sessions.py`)
+
+`GET /api/api/sessions`: `data.sessions[]`:
+
+```json
+{
+  "session_token": "abcdef...",
+  "device": "iPhone 15",
+  "ip_address": "1.2.3.4",
+  "is_current": true,
+  "last_active": "2026-08-14T10:00:00",
+  "created_at": "2026-08-01T00:00:00"
+}
+```
+
+Response wrapper adds pagination: `page`, `per_page`, `total`, `pages`.
+`DELETE /api/api/sessions/{id}` returns `{"success": true, "data": {"message":
+"Session terminated"}}`.
+
+## Contact (`spav2/contacts.py`)
+
+`GET /api/api/contacts`:
+
+```json
+{
+  "contacts": [
+    {
+      "user_id": 7, "username": "maria", "display_name": "Maria",
+      "avatar_url": null, "custom_name": "Masha",
+      "is_online": false, "last_seen": null,
+      "added_at": "2026-08-01T00:00:00",
+      "is_premium": false, "status_emoji": "⭐"
+    }
+  ],
+  "total": 1, "page": 1, "per_page": 50, "pages": 1
+}
+```
+
+## Search result (`spav2/search.py`)
+
+`GET /api/api/search/global`: `data` is a **single matched user**:
+
+```json
+{
+  "user_id": 7, "username": "maria", "display_name": "Maria",
+  "avatar_url": null, "bio": null,
+  "is_online": false, "last_seen": null,
+  "is_premium": false, "status_emoji": "",
+  "is_bot": false, "bot_webapp_url": null,
+  "is_contact": true
+}
+```
+
+`is_contact` reflects whether the user is in your contact book.
+
+## Settings (`UserKSettings.to_dict`, `models.py:713`)
+
+```json
+{
+  "user_id": 42,
+  "settings": {"theme": "dark", "notifications": true}
+}
+```
+
+`settings` is a free-form JSON blob stored in `user_k_settings.settings`.
+
+## Reactions / Replies / Forwards (embedded)
+
+- **Reaction** row (`reaction` table): aggregates to `{reaction_type: count}` maps on the
+  message — never returned standalone.
+- **Reply** (`reply` table): `original_message_id` → `reply_message_id`; materialized into
+  `reply_to_id`/`reply_to_content`/`reply_to_sender` on messages.
+- **Forward** (`forward` table): `forwarded_message_id` → `forwarded_by_id`,
+  `original_sender_name`; materialized into `forwarded_from`.
+
+## File (`models.py:331`, embedded in messages)
+
+Not serialized standalone in V2; embedded as `file_url`/`file_type`/`file_size`/
+`formatted_size`/`preview_size`/`thumbnail_path` on a message. Backing row: `File(file_type,
+file_name, file_path, file_size, thumbnail_path, preview_size='medium', uploader_id, created_at)`.
+`file_url = /uploads/{file_path}`.
+---
+# components/premium.md
+---
+# Premium
+
+Subscription tiers, prices, promo codes and premium perk enforcement.
+
+## Data models (`app/models.py`)
+
+- **UserPremium** — `user_id` (PK), `is_premium`, `premium_since`, `premium_expires_at`,
+  `premium_auto_renew`, `premium_payment_method`, `premium_plan`.
+- **PremiumPromo** — `id`, `code` (unique), `discount_percent`, `max_uses`, `used_count`,
+  `expires_at`, `is_active`.
+- **PremiumOrder** — `id`, `user_id`, `plan`, `amount`, `currency`, `status`, `created_at`.
+
+## Backend modules
+
+- `app/routes/premium.py` — `premium_bp` with `url_prefix='/premium'`.
+- Feature gating lives alongside each feature (e.g. `features.py` checks `user.is_premium`).
+- Storage: prices, plans and promo codes are held in `app/routes/premium.toml` /
+  `premium.json`. Config path constant: `PREMIUM_CONFIG_PATH = __file__ / 'premium.toml'`.
+
+## Endpoints
+
+Standalone mount `/premium`:
+- `GET  /premium/plans` — list plans and RUB prices from the config file.
+- `POST /premium/activate` — activate/switch a premium plan (`plan`, optional payment method).
+- `POST /premium/redeem` — redeem a promo `code`.
+- `GET  /premium/status` — current premium status (`is_premium`, `premium_expires_at`).
+- `POST /premium/cancel` — disable auto-renew.
+
+Via versioned API (`V2 + '/api'` → `/api.v2/api/premium/...`):
+- `GET  /api/api/premium/status`
+- `POST /api/api/premium/activate`
+
+Registered explicitly in `create_app()` alongside the bots blueprint.
+
+## Frontend module (`static/js/k/`)
+- `premium.js` — plan picker, prices in RUB, activation and promo-code entry.
+
+## Notes
+- Prices are configured in RUB (`premium.toml` / `premium.json`), not hard-coded.
+- `UserPremium.is_premium` gates exclusive stickers, larger upload limits, story viewer
+  history, etc. (see each feature page).
+- Promo codes validate against `PremiumPromo.max_uses` and `expires_at`.
+---
+# components/stories.md
+---
+# Stories
+
+Ephemeral media posts (photos/videos) showing a ring on your own profile for 24 hours,
+with viewers, likes, reactions and privacy targeting.
+
+## Data models (`app/models.py`)
+
+- **Story** — `id`, `user_id`, `media_path`, `media_type` (default `'image'`), `caption`,
+  `music_path`, `privacy_type` (default `'everyone'`), `created_at`.
+- **StoryView** — `story_id`, `viewer_id`, `viewed_at` (who has seen it).
+- **StoryLike** — `story_id`, `user_id`, `created_at`.
+- **StoryReaction** — `story_id`, `user_id`, `reaction`, `created_at`.
+- **StoryPrivacy** — `story_id`, `privacy_type` (override).
+- **StoryAllowedUser** — `story_id`, `user_id` (explicit allow-list).
+
+## Endpoints (`app/routes/spav2/stories.py`)
+
+All under `V2 + '/api'` → `/api.v2/api/stories/...`:
+
+- `POST /api/api/stories/create` — create a story (`media_path`, `caption`, `privacy_type`).
+- `GET  /api/api/stories/feed` — your stories + friends' active stories.
+- `GET  /api/api/stories/{id}` — fetch one story.
+- `DELETE /api/api/stories/{id}` — delete your story.
+- `POST /api/api/stories/{id}/view` — register a view (creates `StoryView`).
+- `POST /api/api/stories/{id}/like` / `/unlike` — toggle like.
+- `POST /api/api/stories/{id}/reaction` — add an emoji reaction.
+- `POST /api/api/stories/{id}/views` — list viewers of your story.
+
+## Frontend module (`static/js/k/`)
+- `stories.js` — story ring on profile, full-screen viewer, like & reaction bar.
+
+## Notes & limits
+- Story media must already exist in `/uploads/...` before `create`.
+- Privacy is resolved as: explicit `StoryAllowedUser` > `privacy_type` ('everyone' handled
+  directly, others via `StoryPrivacy`).
+- A viewer who is not allowed is blocked from `view`.

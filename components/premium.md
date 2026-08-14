@@ -1,3 +1,9 @@
+---
+layout: page
+title: Premium
+permalink: /components/premium/
+---
+
 # Premium
 
 Subscription tiers, prices, promo codes and premium perk enforcement.

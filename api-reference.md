@@ -1,3 +1,9 @@
+---
+layout: page
+title: API Reference
+permalink: /api-reference/
+---
+
 # API Reference
 
 Kiselgram exposes a JSON API (V2/V3), a legacy session-based API (V1), plus file upload, premium, bot, and video-integration endpoints.

@@ -1,3 +1,9 @@
+---
+layout: page
+title: Contacts & Profile
+permalink: /components/contacts-profile/
+---
+
 # Contacts & Profile
 
 Contact book, blocking, reporting and profile management.
@@ -45,6 +51,6 @@ Profile:
 
 ## Notes
 - A blocked user cannot message you; `messages/send` checks `BlockedUser`.
-- Reports feed the admin queue (`/api/admin/reports`, see [Admin Panel](admin-panel.md)).
+- Reports feed the admin queue (`/api/admin/reports`, see [Admin Panel](/components/admin-panel/)).
 - `user_id` vs `username` — most endpoints accept the numeric `user_id`; profile lookup uses
   the `username`.

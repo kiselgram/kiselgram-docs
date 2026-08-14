@@ -1,3 +1,9 @@
+---
+layout: page
+title: Security
+permalink: /security/
+---
+
 # Security
 
 This document describes how authentication, authorization, session management, message privacy and admin-governed features work in Kiselgram, plus operational security best practices.
@@ -92,4 +98,4 @@ Settings are enforced server-side, not just hidden in the UI.
 - **Terminal executor** is OS-level by design — must be firewalled off public networks.
 - Security headers are best-effort; CSP for a rich SPA is extensive — review responsiveness on your domain.
 
-See the admin panel docs in [Architecture](architecture.md) and [Deployment](deployment.md) for more.
+See the admin panel docs in [Architecture](/architecture/) and [Deployment](/deployment/) for more.

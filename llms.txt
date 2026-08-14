@@ -30,6 +30,7 @@ Kiselgram is a full-featured messenger you can deploy on your own infrastructure
 - [Features & Extras](components/features-extras.md): polls, pins, forwards, saved messages, music, search, referrals and settings.
 - [Contacts & Profile](components/contacts-profile.md): contact book, blocking, reporting and profiles.
 - [Files & Uploads](components/files-uploads.md): uploads, downloads, chunked uploads and attachments.
+- [JSON Serialization](components/json-serialization.md): exact JSON shapes the V2 API returns for every core entity — user, message, chat, group, channel, story, call, session, contact, search result, settings.
 
 ## Note
 

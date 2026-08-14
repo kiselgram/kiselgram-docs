@@ -1,3 +1,9 @@
+---
+layout: page
+title: Files & Uploads
+permalink: /components/files-uploads/
+---
+
 # Files & Uploads
 
 Media and file upload/download for chat attachments, stories, avatars and profile photos.
@@ -8,7 +14,7 @@ Media and file upload/download for chat attachments, stories, avatars and profil
   `hash`, `created_at`.
 - **Attachment** — `id`, `message_id`, `file_upload_id`, `media_type`, `thumbnail_path`,
   `created_at`.
-- Messages reference media via `Message.file_path` / `thumbnail_path` (see [Chat](chat.md)).
+- Messages reference media via `Message.file_path` / `thumbnail_path` (see [Chat](/components/chat/)).
 
 ## Backend modules (`app/routes/`)
 

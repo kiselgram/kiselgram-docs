@@ -1,3 +1,9 @@
+---
+layout: page
+title: Domain Layout
+permalink: /domain/
+---
+
 # Domain Architecture
 
 ```

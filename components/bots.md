@@ -1,3 +1,9 @@
+---
+layout: page
+title: Bots
+permalink: /components/bots/
+---
+
 # Bots
 
 Bot platform: create and run bot "apps" against the live API on behalf of their owners,
