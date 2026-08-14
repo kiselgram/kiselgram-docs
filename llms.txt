@@ -1,0 +1,36 @@
+# Kiselgram
+
+> Kiselgram is a self-hosted, modern messaging platform — personal chats, groups, broadcast channels, stories, video calls, bots and premium — built with Flask (Python 3.10+), SQLAlchemy and a vanilla-JavaScript (ES6+) SPA with no framework. UI text is in Russian. License is proprietary.
+
+Kiselgram is a full-featured messenger you can deploy on your own infrastructure. The backend is a Flask/SQLAlchemy JSON API (V2, with a stub V3), the frontend is a dependency-free SPA served from `static/js/k/`. This documentation describes the codebase version 4.0.0 in the `kiselgram-dev` repository.
+
+## Docs
+
+- [README](README.md): documentation index, quick facts, domain layout and component overview.
+- [Overview](overview.md): what Kiselgram is, full feature list, tech stack and domain layout.
+- [Getting Started](getting-started.md): install, configure and run locally; `manage.py` command reference.
+- [Architecture](architecture.md): application structure, 42-model data schema, route systems (V1/V2/V3) and frontend module layout.
+- [API Reference](api-reference.md): full endpoint list for the V1 and V2/V3 JSON APIs, plus external mounts (admin, bots, push, files, video, utils).
+- [Security](security.md): authentication, bearer tokens, message encryption (AES-256-GCM/Fernet), sessions, privacy and admin controls.
+- [Deployment](deployment.md): production Docker deployment, services, environment variables and reverse proxy.
+- [Testing](testing.md): pytest suite layout, 37 test files, fixtures and how to run tests.
+
+## Components
+
+- [Component map](components/index.md): how every subsystem fits together — blueprint layout, guards, rate limits and the module matrix.
+- [Authentication & Sessions](components/auth-sessions.md): register/login, OAuth, QR login, push tokens and session management.
+- [Personal Chat & Messages](components/chat.md): direct messaging, read receipts, typing, emoji reactions, scheduling and encryption fields.
+- [Groups](components/groups.md): group chats, membership roles, invite links and forum topics.
+- [Channels](components/channels.md): broadcast channels, subscriptions, publishing and verification.
+- [Stories](components/stories.md): 24h media posts, views, likes, reactions and privacy targeting.
+- [Calls & Video (WebRTC)](components/calls-video.md): 1:1 voice/video calls and multi-user WebRTC rooms.
+- [Premium](components/premium.md): subscription plans, RUB pricing, promo codes and perk gating.
+- [Bots](components/bots.md): bot apps, slash commands and webhooks.
+- [Admin Panel](components/admin-panel.md): user moderation, reports, broadcast and audit log.
+- [Features & Extras](components/features-extras.md): polls, pins, forwards, saved messages, music, search, referrals and settings.
+- [Contacts & Profile](components/contacts-profile.md): contact book, blocking, reporting and profiles.
+- [Files & Uploads](components/files-uploads.md): uploads, downloads, chunked uploads and attachments.
+
+## Note
+
+The single-file concatenated version of all documentation is available at [llms-full.txt](llms-full.txt) for direct inclusion in LLM context. Human-readable marketing/positioning documents describing the product live in the `kiselgram-dev` repository (`Why_Kiselgram_RU.md`, `Why_Kiselgram_EN.md`).
