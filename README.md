@@ -13,6 +13,25 @@ Welcome to the Kiselgram documentation. Kiselgram is a self-hosted, modern messa
 | [Security](security.md) | Authentication, message encryption, sessions, privacy, admin |
 | [Deployment](deployment.md) | Production Docker deployment, services, environment variables |
 | [Testing](testing.md) | Test suite layout and how to run it |
+| [Components](components/index.md) | Per-component deep dives: chat, groups, channels, stories, calls, premium, bots, admin, extras, files |
+
+## Component docs
+
+Each platform subsystem has its own page under [`components/`](components/):
+
+- [Component map](components/index.md) — how everything fits together, blueprint layout, helpers
+- [Authentication & Sessions](components/auth-sessions.md) — register/login, OAuth, QR login, push, session management
+- [Personal Chat & Messages](components/chat.md) — direct messaging, read receipts, reactions, encryption fields
+- [Groups](components/groups.md) — membership, roles, invite links, forum topics
+- [Channels](components/channels.md) — broadcast channels, subscriptions, verification
+- [Stories](components/stories.md) — 24h media posts, views, likes, reactions, privacy
+- [Calls & Video (WebRTC)](components/calls-video.md) — 1:1 calls and multi-user video rooms
+- [Premium](components/premium.md) — plans, RUB pricing, promo codes
+- [Bots](components/bots.md) — bot apps, commands, webhooks
+- [Admin Panel](components/admin-panel.md) — moderation, reports, broadcast
+- [Features & Extras](components/features-extras.md) — polls, pins, forwards, saved, music, search, referrals, settings
+- [Contacts & Profile](components/contacts-profile.md) — contact book, blocking, reports, profile
+- [Files & Uploads](components/files-uploads.md) — uploads, downloads, chunked upload, attachments
 
 ## Quick facts
 
