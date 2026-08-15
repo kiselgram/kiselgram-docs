@@ -67,6 +67,22 @@
     --font-family-base: "Changa", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
 }
 
+/* Изменение цвета фона шапки сайта на синий */
+.navbar.td-navbar {
+    background-color: #0044cc !important; /* Вы можете заменить #0044cc на любой нужный оттенок синего */
+}
+
+/* Изменение цвета текста ссылок в шапке на белый */
+.navbar.td-navbar .nav-link,
+.navbar.td-navbar .navbar-brand {
+    color: #ffffff !important;
+}
+
+/* Цвет ссылок при наведении курсора (чуть светлее/прозрачнее) */
+.navbar.td-navbar .nav-link:hover {
+    color: rgba(255, 255, 255, 0.8) !important;
+}
+
 body,
 .td-content,
 .td-sidebar,
